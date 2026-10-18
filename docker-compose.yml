@@ -1,0 +1,2 @@
+# Add application services as the project stack is defined.
+services: {}
