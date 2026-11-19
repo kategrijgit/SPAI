@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPAI — Календарь и задачи</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__left">
+      <span class="logo">SPAI</span>
+      <nav class="nav">
+        <a href="index.html" class="nav__link nav__link--active">Календарь</a>
+        <a href="generate.html" class="nav__link">Генератор ИИ</a>
+        <a href="history.html" class="nav__link">История</a>
+      </nav>
+    </div>
+    <div class="topbar__right">
+      <a href="login.html" class="btn btn--ghost">Войти</a>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="calendar-panel">
+      <div class="calendar-toolbar">
+        <div>
+          <h1 class="page-title">Моё расписание</h1>
+          <p class="page-subtitle hidden" id="conflict-banner">
+            Внимание: найдены задачи с пересекающимся временем!
+          </p>
+        </div>
+        <div class="view-switcher" role="group" aria-label="Вид календаря">
+          <button type="button" class="btn btn--small" data-view="day">День</button>
+          <button type="button" class="btn btn--small is-active" data-view="week">Неделя</button>
+          <button type="button" class="btn btn--small" data-view="month">Месяц</button>
+        </div>
+      </div>
+
+      <div id="calendar-view" class="calendar-grid"></div>
+    </section>
+
+    <aside class="tasks-panel">
+      <h2>Быстрое добавление задачи</h2>
+      <form id="quick-task-form" class="stack-form">
+        <label>
+          Название задачи
+          <input type="text" id="task-title" placeholder="Например: Подготовка к экзамену" required />
+        </label>
+
+        <div class="two-cols">
+          <label>
+            Дата
+            <input type="date" id="task-date" required />
+          </label>
+          <label>
+            Время (с – до)
+            <div class="time-pair">
+              <input type="time" id="task-start" value="09:00" required />
+              <input type="time" id="task-end" value="10:30" required />
+            </div>
+          </label>
+        </div>
+
+        <label>
+          Заметка
+          <textarea id="task-note" rows="2" placeholder="Детали или ссылка..."></textarea>
+        </label>
+
+        <button type="submit" class="btn btn--primary">Добавить задачу</button>
+      </form>
+
+      <div class="tasks-list-box">
+        <h3>Список задач</h3>
+        <ul id="task-list" class="task-list"></ul>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Модальное окно просмотра и редактирования задачи -->
+  <div id="task-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__dialog">
+      <div class="modal__header">
+        <h2 id="modal-title">Редактировать задачу</h2>
+        <button type="button" class="icon-btn" data-close-modal aria-label="Закрыть">&times;</button>
+      </div>
+
+      <form id="modal-task-form" class="stack-form">
+        <input type="hidden" id="edit-task-id" />
+
+        <label>
+          Название
+          <input type="text" id="edit-task-title" required />
+        </label>
+
+        <div class="two-cols">
+          <label>
+            Дата
+            <input type="date" id="edit-task-date" required />
+          </label>
+          <label>
+            Начало / Конец
+            <div class="time-pair">
+              <input type="time" id="edit-task-start" required />
+              <input type="time" id="edit-task-end" required />
+            </div>
+          </label>
+        </div>
+
+        <label>
+          Заметка
+          <textarea id="edit-task-note" rows="3"></textarea>
+        </label>
+
+        <label class="checkbox-row">
+          <input type="checkbox" id="edit-task-done" />
+          <span>Задача выполнена</span>
+        </label>
+
+        <div class="modal__footer">
+          <button type="button" id="delete-task-btn" class="btn btn--danger">Удалить</button>
+          <div class="modal__actions">
+            <button type="button" class="btn btn--ghost" data-close-modal>Отмена</button>
+            <button type="submit" class="btn btn--primary">Сохранить</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="js/calendar.js"></script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPAI — Генератор расписания с ИИ</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__left">
+      <span class="logo">SPAI</span>
+      <nav class="nav">
+        <a href="index.html" class="nav__link">Календарь</a>
+        <a href="generate.html" class="nav__link nav__link--active">Генератор ИИ</a>
+        <a href="history.html" class="nav__link">История</a>
+      </nav>
+    </div>
+    <div class="topbar__right">
+      <a href="login.html" class="btn btn--ghost">Войти</a>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="calendar-panel">
+      <h1 class="page-title">Генерация плана с ИИ</h1>
+      <p class="page-subtitle" style="color: var(--muted); font-weight: 400;">
+        Опишите свои задачи, цели, занятия, работу и отдых свободным текстом — ИИ соберёт расписание на неделю.
+      </p>
+
+      <form id="ai-prompt-form" class="stack-form" style="margin-top: 16px;">
+        <label>
+          Ваши задачи и предпочтения
+          <textarea
+            id="ai-prompt-input"
+            rows="6"
+            placeholder="Например: С понедельника по пятницу пары с 9:00 до 13:00, в среду тренировка в 18:00, нужно выделить 6 часов на диплом и 2 дня на отдых..."
+            required
+          ></textarea>
+        </label>
+
+        <div class="modal__actions">
+          <button type="submit" id="generate-btn" class="btn btn--primary">Сгенерировать план</button>
+          <button type="button" id="fill-demo-btn" class="btn btn--ghost">Подставить пример</button>
+        </div>
+      </form>
+
+      <!-- Блок уточняющих вопросов от ИИ (когда данных не хватает) -->
+      <div id="clarify-box" class="tasks-list-box hidden">
+        <h3>ИИ задал уточняющие вопросы</h3>
+        <ul id="clarify-questions" class="task-list" style="margin-bottom: 12px;"></ul>
+        <form id="clarify-form" class="stack-form">
+          <label>
+            Ваш ответ
+            <input type="text" id="clarify-answer" placeholder="Уточните детали..." required />
+          </label>
+          <button type="submit" class="btn btn--primary">Отправить уточнение</button>
+        </form>
+      </div>
+
+      <!-- Состояние ошибки генерации -->
+      <div id="ai-error-box" class="tasks-list-box hidden">
+        <div class="task-item task-item--conflict">
+          <div>
+            <strong>Не удалось сгенерировать план</strong>
+            <div id="ai-error-text" style="font-size: 0.85rem; color: var(--muted);">
+              Проверьте соединение или попробуйте ещё раз.
+            </div>
+          </div>
+          <button type="button" id="retry-btn" class="btn btn--small btn--primary">Попробовать снова</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="tasks-panel">
+      <h2>Предпросмотр плана</h2>
+      <p id="preview-status" style="color: var(--muted); font-size: 0.88rem;">
+        Сгенерированные задачи появятся здесь перед сохранением.
+      </p>
+      <ul id="preview-list" class="task-list"></ul>
+
+      <div id="preview-actions" class="hidden" style="margin-top: 14px;">
+        <button type="button" id="save-plan-btn" class="btn btn--primary" style="width: 100%;">
+          Принять и сохранить план
+        </button>
+      </div>
+    </aside>
+  </main>
+
+  <script type="module" src="js/ai-planner.js"></script>
+</body>
+</html>

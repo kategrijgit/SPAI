@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPAI — Вход и регистрация</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .auth-wrapper {
+      max-width: 440px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+
+    .auth-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .auth-message {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      background: #edf2ff;
+      color: var(--primary);
+    }
+
+    .auth-message--error {
+      background: var(--conflict-bg);
+      color: var(--conflict);
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__left">
+      <span class="logo">SPAI</span>
+      <nav class="nav">
+        <a href="index.html" class="nav__link">Календарь</a>
+        <a href="generate.html" class="nav__link">Генератор ИИ</a>
+        <a href="history.html" class="nav__link">История</a>
+      </nav>
+    </div>
+    <div class="topbar__right">
+      <a href="login.html" class="btn btn--small is-active">Войти</a>
+    </div>
+  </header>
+
+  <main class="auth-wrapper">
+    <section class="auth-card">
+      <div class="auth-tabs" role="tablist">
+        <button type="button" id="tab-login" class="btn btn--small is-active">Вход</button>
+        <button type="button" id="tab-register" class="btn btn--small">Регистрация</button>
+      </div>
+
+      <!-- Форма входа -->
+      <form id="login-form" class="stack-form">
+        <h1 class="page-title">Вход в SPAI</h1>
+        <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">
+          Войдите, чтобы открыть свой календарь и сохранённые планы.
+        </p>
+
+        <label>
+          Email
+          <input type="email" id="login-email" placeholder="name@example.com" required />
+        </label>
+
+        <label>
+          Пароль
+          <input type="password" id="login-password" placeholder="Введите пароль" required />
+        </label>
+
+        <button type="submit" class="btn btn--primary">Войти</button>
+      </form>
+
+      <!-- Форма регистрации -->
+      <form id="register-form" class="stack-form hidden">
+        <h1 class="page-title">Создать аккаунт</h1>
+        <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">
+          Заполните данные для первого входа в планировщик.
+        </p>
+
+        <label>
+          Фамилия
+          <input type="text" id="register-lastname" placeholder="Например: Ковальчук" required />
+        </label>
+
+        <label>
+          Email
+          <input type="email" id="register-email" placeholder="name@example.com" required />
+        </label>
+
+        <label>
+          Пароль
+          <input type="password" id="register-password" minlength="6" placeholder="Минимум 6 символов" required />
+        </label>
+
+        <button type="submit" class="btn btn--primary">Зарегистрироваться</button>
+      </form>
+
+      <div id="auth-feedback" class="auth-message hidden"></div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { spaiApi } from "./js/api.js";
+
+    const tabLogin = document.getElementById("tab-login");
+    const tabRegister = document.getElementById("tab-register");
+    const loginForm = document.getElementById("login-form");
+    const registerForm = document.getElementById("register-form");
+    const feedbackEl = document.getElementById("auth-feedback");
+
+    function showFeedback(text, isError = false) {
+      feedbackEl.textContent = text;
+      feedbackEl.classList.remove("hidden");
+      feedbackEl.classList.toggle("auth-message--error", isError);
+    }
+
+    function switchTab(mode) {
+      const isLogin = mode === "login";
+      tabLogin.classList.toggle("is-active", isLogin);
+      tabRegister.classList.toggle("is-active", !isLogin);
+      loginForm.classList.toggle("hidden", !isLogin);
+      registerForm.classList.toggle("hidden", isLogin);
+      feedbackEl.classList.add("hidden");
+    }
+
+    tabLogin.addEventListener("click", () => switchTab("login"));
+    tabRegister.addEventListener("click", () => switchTab("register"));
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
+
+      if (!email || !password) {
+        showFeedback("Заполните email и пароль.", true);
+        return;
+      }
+
+      try {
+        await spaiApi.login({ email, password });
+        showFeedback("Вход выполнен! Переходим к расписанию...");
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 400);
+      } catch (err) {
+        showFeedback(err?.message || "Ошибка входа.", true);
+      }
+    });
+
+    registerForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const lastName = document.getElementById("register-lastname").value.trim();
+      const email = document.getElementById("register-email").value.trim();
+      const password = document.getElementById("register-password").value;
+
+      if (!lastName || !email || password.length < 6) {
+        showFeedback("Проверьте фамилию, email и пароль (не менее 6 символов).", true);
+        return;
+      }
+
+      try {
+        await spaiApi.register({ lastName, email, password });
+        showFeedback("Аккаунт создан! Переходим к созданию плана...");
+        setTimeout(() => {
+          window.location.href = "generate.html";
+        }, 500);
+      } catch (err) {
+        showFeedback(err?.message || "Ошибка регистрации.", true);
+      }
+    });
+  </script>
+</body>
+</html>

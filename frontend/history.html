@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPAI — История активности</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .history-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 850px) {
+      .history-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .history-card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      background: #fcfcfd;
+    }
+
+    .history-card__top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .history-meta {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      background: #edf2ff;
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__left">
+      <span class="logo">SPAI</span>
+      <nav class="nav">
+        <a href="index.html" class="nav__link">Календарь</a>
+        <a href="generate.html" class="nav__link">Генератор ИИ</a>
+        <a href="history.html" class="nav__link nav__link--active">История</a>
+      </nav>
+    </div>
+    <div class="topbar__right">
+      <button type="button" id="archive-current-btn" class="btn btn--small btn--primary">
+        Сохранить текущий план в архив
+      </button>
+    </div>
+  </header>
+
+  <main class="workspace" style="grid-template-columns: 1fr;">
+    <section class="calendar-panel">
+      <div class="calendar-toolbar">
+        <div>
+          <h1 class="page-title">История планов и выполненных задач</h1>
+          <p class="page-subtitle" style="color: var(--muted); font-weight: 400;">
+            Просмотр прошлых расписаний и отмеченных выполненных задач.
+          </p>
+        </div>
+        <button type="button" id="reset-history-btn" class="btn btn--small btn--ghost">
+          Сбросить демо-архив
+        </button>
+      </div>
+
+      <div class="history-grid">
+        <div>
+          <h2>Выполненные задачи</h2>
+          <p class="history-meta" style="margin-top: 0;">
+            Сюда попадают задачи, отмеченные как выполненные в календаре, а также архивные задачи.
+          </p>
+          <ul id="completed-tasks-list" class="task-list"></ul>
+        </div>
+
+        <div>
+          <h2>Сохранённые планы</h2>
+          <p class="history-meta" style="margin-top: 0;">
+            Прошлые недели и сохранённые снимки расписания.
+          </p>
+          <div id="archived-plans-list" class="stack-form"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { spaiApi } from "./js/api.js";
+
+    const HISTORY_PLANS_KEY = "spai_history_plans";
+
+    const defaultHistoryPlans = [
+      {
+        id: "plan-prev-1",
+        title: "Учебная неделя (прошлый период)",
+        createdAt: "Прошлая неделя",
+        tasksCount: 4,
+        completedCount: 3,
+        sampleTasks: [
+          "Подготовить конспект по SQL",
+          "Созвон команды по API",
+          "Тренировка в зале"
+        ]
+      }
+    ];
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    async function renderHistory() {
+      const currentTasks = await spaiApi.getTasks([]);
+      const historyPlans = await spaiApi.getHistoryPlans(defaultHistoryPlans);
+
+      const doneFromCurrent = Array.isArray(currentTasks)
+        ? currentTasks.filter((t) => Boolean(t.done))
+        : [];
+
+      const archiveDoneTitles = historyPlans.flatMap((p) => p.sampleTasks || []);
+
+      const completedListEl = document.getElementById("completed-tasks-list");
+      const allDone = [
+        ...doneFromCurrent.map((t) => ({
+          title: t.title,
+          meta: `${t.date || ""} · ${t.start || ""}–${t.end || ""} (из текущего плана)`
+        })),
+        ...archiveDoneTitles.map((title) => ({
+          title,
+          meta: "Из сохранённого плана"
+        }))
+      ];
+
+      if (!allDone.length) {
+        completedListEl.innerHTML =
+          '<li class="task-item"><span class="history-meta">Пока нет выполненных задач. Отметьте задачу в календаре.</span></li>';
+      } else {
+        completedListEl.innerHTML = allDone
+          .map(
+            (item) => `
+            <li class="task-item event-chip--done">
+              <div>
+                <div><strong>${escapeHtml(item.title)}</strong></div>
+                <div class="history-meta">${escapeHtml(item.meta)}</div>
+              </div>
+              <span class="badge">Готово</span>
+            </li>
+          `
+          )
+          .join("");
+      }
+
+      const plansListEl = document.getElementById("archived-plans-list");
+      if (!historyPlans.length) {
+        plansListEl.innerHTML =
+          '<div class="history-card"><span class="history-meta">Архив планов пуст.</span></div>';
+      } else {
+        plansListEl.innerHTML = historyPlans
+          .map(
+            (plan) => `
+            <article class="history-card">
+              <div class="history-card__top">
+                <strong>${escapeHtml(plan.title)}</strong>
+                <span class="badge">${plan.completedCount}/${plan.tasksCount} выполнено</span>
+              </div>
+              <div class="history-meta">${escapeHtml(plan.createdAt)}</div>
+            </article>
+          `
+          )
+          .join("");
+      }
+    }
+
+    document.getElementById("archive-current-btn").addEventListener("click", async () => {
+      const currentTasks = await spaiApi.getTasks([]);
+      const tasksArr = Array.isArray(currentTasks) ? currentTasks : [];
+      const doneCount = tasksArr.filter((t) => t.done).length;
+
+      const newPlan = {
+        id: "plan-" + Date.now(),
+        title: `Снимок расписания (${new Date().toLocaleDateString("ru-RU")})`,
+        createdAt: new Date().toLocaleString("ru-RU"),
+        tasksCount: tasksArr.length,
+        completedCount: doneCount,
+        sampleTasks: tasksArr.filter((t) => t.done).map((t) => t.title)
+      };
+
+      await spaiApi.archivePlan(newPlan);
+      await renderHistory();
+    });
+
+    document.getElementById("reset-history-btn").addEventListener("click", async () => {
+      localStorage.setItem(HISTORY_PLANS_KEY, JSON.stringify(defaultHistoryPlans));
+      await renderHistory();
+    });
+
+    renderHistory();
+  </script>
+</body>
+</html>
